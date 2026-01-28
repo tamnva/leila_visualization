@@ -1,4 +1,5 @@
 # History files
+*.csv
 .Rhistory
 .Rapp.history
 
