@@ -1,10 +1,10 @@
 library(leaflet)
 
 navbarPage(
-  "LEILA", id="nav",
+  "", id="nav",
   
   tabPanel(
-    "Interaktive Karte",
+    "Home",
     
     conditionalPanel("false", icon("bullseye")),
     
@@ -21,17 +21,40 @@ navbarPage(
         absolutePanel(
           id = "controls", class = "panel panel-default", fixed = TRUE, 
           draggable = TRUE, top = 60, left = "auto", right = 20, 
-          bottom = "auto", width = 330, height = "auto",
+          bottom = "auto", width = 450, height = "auto",
           
-          h4("Catchment explorer"),
-          
-          selectInput("select_attr", "1. Select catchment attributes", 
-                      multiple = TRUE, choices = colnames(attributes[,-c(1)]), 
-                      selected  = c("elev_mean","p_mean", 
-                                    "q_mean", "runoff_ratio")),
-                      
-          plotOutput("boxplot_attr", height = 300)
-          
+          bslib::navset_card_underline(
+            id = "navset",
+            title = NULL,
+            
+            # First need to filter catchments with streamflow data
+            bslib::nav_panel(
+              title = "Data →", selected = TRUE,
+              tags$hr(class = "custom-line"), h5(),
+              
+              dateRangeInput("selectPeriod", "1. Select period for analysis",
+                             start = as.Date("2001-01-01"),
+                             end = as.Date("2020-12-31"),
+                             min = as.Date("1980-01-01"),
+                             max = as.Date("2020-12-31")),
+              
+              numericInput("maxQmissing", "2. Maximum allowable missing streamflow (%)",
+                           min = 0, max = 99, value = 5),
+              
+              h5("3. Run subseting catchments"),
+              actionButton("dataSubset", "click to run")
+            ),
+            
+            # Now select "targeted catchment"
+            bslib::nav_panel(
+              title = "Targeted catchments", selected = TRUE,
+              tags$hr(class = "custom-line"), h5(),
+              
+              h6("working")
+
+            ),
+            
+          ), 
         ),
     )
   ),

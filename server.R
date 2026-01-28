@@ -175,36 +175,8 @@ function(input, output, session) {
   #                           Boxplot for selected catchment                   #
   #----------------------------------------------------------------------------#
   observeEvent(
-    c(input$nr_dam, input$agri_land, input$urban_land, input$select_attr), {
-      
-      spsComps::shinyCatch(
-        selected_catchments <- attributes %>%
-          dplyr::mutate(catchment_group = case_when(
-            dams_num <= input$nr_dam & 
-              artificial_surfaces_perc <= input$urban_land &
-              agricultural_areas_perc <= input$agri_land ~ "near-nat.",
-            TRUE ~ "non-nat.")) %>%
-          dplyr::select(c(catchment_group, input$select_attr)) %>%
-          tidyr::pivot_longer(cols = -1, names_to = "att", values_to = "value"),
-        
-        blocking_level = "error"
-      )
+    c(input$selectPeriod, input$maxQmissing), {
       
       
-      spsComps::shinyCatch(
-        output$boxplot_attr <- renderPlot(
-          ggplot(selected_catchments, 
-                 aes(x = catchment_group, y = value, fill = catchment_group)) +
-            geom_boxplot() +
-            facet_wrap(~att, ncol = 2, scales = "free") +
-            labs(y ="", x = "") +
-            scale_fill_manual(values=c("#1A85FF", "#FFC107")) +
-            guides(fill = "none") +
-            theme_bw() + 
-            theme(text = element_text(size = 16),
-                  axis.text.x = element_blank())),
-        
-        blocking_level = "error"
-      )
   })
 }
