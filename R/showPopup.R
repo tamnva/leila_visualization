@@ -11,8 +11,10 @@
 #' @export
 
 # Show a popup at the given location
-showPopup <- function(gauge_id, lat, lng) {
-  selectedCat <- attributes[attributes$gauge_id == gauge_id,]
+showPopup <- function(gauge_id) {
+  
+  selectedCat <- attributes[attributes$gauge_id == gauge_id[1],]
+
   content <- as.character(tagList(
     tags$h5("Gauge ID:", selectedCat$gauge_id),
     sprintf("Catchment area: %s %s", round(selectedCat$area, 0), " km²"), 
@@ -22,5 +24,4 @@ showPopup <- function(gauge_id, lat, lng) {
     sprintf("Forest and semi-nattural area: %s %s", 
             round(selectedCat$forests_and_seminatural_areas_perc, 0), " %")
   ))
-  leafletProxy("map") %>% addPopups(lng, lat, content, layerId = gauge_id)
 }

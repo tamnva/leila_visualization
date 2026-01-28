@@ -31,9 +31,10 @@ function(input, output, session) {
       addCircleMarkers(data = stations,
                        radius = 3,
                        group = "Alle Einzugsgebiete",
-                       fillColor = "#004D40",
-                       fillOpacity = 0.5,
+                       fillColor = "#1A85FF",
+                       fillOpacity = 1,
                        stroke = FALSE,
+                       popup = ~ showPopup(gauge_id),
                        layerId = ~ gauge_id
       ) %>%
       addLayersControl(
@@ -44,22 +45,6 @@ function(input, output, session) {
         options = layersControlOptions(position = "bottomleft")
       )  %>%
       setView(lng = 9, lat = 50, zoom = 5)
-  })
-
-  #----------------------------------------------------------------------------#
-  #                                Add pop up                                  #
-  #----------------------------------------------------------------------------#
-  # When map is clicked, show a popup with catchment info
-  observe({
-    leafletProxy("map") %>% clearPopups()
-    event <- input$map_shape_click
-    if (is.null(event))
-      return()
-    
-    isolate({
-      showPopup(event$id, event$lat, event$lng)
-    })
-  
   })
   
   
@@ -128,16 +113,7 @@ function(input, output, session) {
                        fillOpacity = 1,
                        stroke = FALSE,
                        layerId = ~ gauge_id
-      ) %>% 
-      addPolygons(
-        data = catchments %>% 
-          dplyr::filter(gauge_id %in% streamflow_statistic$gauge_id),
-        stroke = TRUE,
-        group = "Alle Einzugsgebiete",
-        fillColor = "#ffffff00",
-        color = "#1A85FF",
-        weight = 2,
-        layerId = ~ gauge_id) %>% 
+      ) %>%
       clearControls()
     
   })
@@ -145,7 +121,7 @@ function(input, output, session) {
   
 
   #----------------------------------------------------------------------------#
-  #                 Near-natural catchment selection                           #
+  #                 Show catchment when click on table                         #
   #----------------------------------------------------------------------------#
   observe({
     if (is.null(input$goto))
@@ -161,19 +137,21 @@ function(input, output, session) {
     })
   })
   
-
-  
   #----------------------------------------------------------------------------#
-  #                 Display selected  when click gauge                #
+  #                 Add catchment shape file when click on gauge               #
   #----------------------------------------------------------------------------#
-  observeEvent(c(input$nr_dam, input$agri_land, input$urban_land), {
-  
-    selected_catchments <- attributes %>%
-      dplyr::filter(dams_num <= input$nr_dam,
-                    artificial_surfaces_perc <= input$urban_land,
-                    agricultural_areas_perc <= input$agri_land)
+  observeEvent(input$map_marker_click, {
     
-    
+    if (!is.null(input$map_marker_click$id)){
+      leafletProxy("map") %>%
+        clearGroup("Gewägktes Einzugsgebiet") %>%
+        addPolygons(
+          data = subset(catchments, gauge_id == input$map_marker_click$id),
+          stroke = TRUE,
+          weight = 2,
+          popup = ~ showPopup(gauge_id),
+          group = "Gewägktes Einzugsgebiet",
+          layerId = ~ gauge_id)}
   })
   
   #----------------------------------------------------------------------------#

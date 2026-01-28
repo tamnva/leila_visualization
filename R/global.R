@@ -7,16 +7,18 @@ library(terra)
 #------------------------------------------------------------------------------#
 #                         Read database                                        #
 #------------------------------------------------------------------------------#
+# Read catchment attributes
+attributes <- read_csv("data/attributes.csv", show_col_types = FALSE) %>%
+  rename(Lat = gauge_lat, Long = gauge_lon)
+
 # Read shape files of station and catchments
 stations <- st_transform(st_read("data/CAMELS_DE_gauging_stations.shp", 
-                                 quiet = TRUE), 4326) 
+                                 quiet = TRUE), 4326) %>%
+  mutate(long = st_coordinates(geometry)[1],
+        lat = st_coordinates(geometry)[2])
 
 catchments <- st_transform(st_read("data/CAMELS_DE_catchments.shp", 
                                    quiet = TRUE), 4326) 
-
-# Read catchment attributes
-attributes <- read_csv("data/attributes.csv", show_col_types = FALSE) %>%
-  rename(Lat = gauge_lat, Long = gauge_lon) 
 
 
 # Read default hydrological indicators, can be recalcuated from the interface
