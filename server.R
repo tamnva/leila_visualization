@@ -28,11 +28,18 @@ function(input, output, session) {
                        group = "OpenTopoMap") %>%
       addProviderTiles(providers$Esri.WorldImagery,
                        group = "WorldImagery") %>%
+      addCircleMarkers(data = stations,
+                       radius = 3,
+                       group = "Alle Einzugsgebiete",
+                       fillColor = "#004D40",
+                       fillOpacity = 0.5,
+                       stroke = FALSE,
+                       layerId = ~ gauge_id
+      ) %>%
       addLayersControl(
         baseGroups = c("CartoDBPositron", "CartoDBPositronNolabel", 
                        "OpenStreetMap", "OpenTopoMap", "WorldImagery"),
-        overlayGroups = c("Naturnahes Einzugsgebiet", 
-                          "Unnatürliches Einzugsgebiet",
+        overlayGroups = c("Alle Einzugsgebiete",
                           "Hydrogeologie"),
         options = layersControlOptions(position = "bottomleft")
       )  %>%
@@ -60,12 +67,11 @@ function(input, output, session) {
   #    Select catchment based on streamflow data availability (Data)           #
   #----------------------------------------------------------------------------#
   observe({
-    req(input$selectPeriod)
-    req(input$maxQmissing)
+    
     req(input$dataSubset)
     
     # Read streamflow data from CAMELS-DE
-    streamflow_statistic <- getStreamflowStatistics(
+    streamflow_statistic <<- getStreamflowStatistics(
       timeseries_camels_combine ="data/CAMELS_DE_hydromet_timeseries_combine.csv",
       variable_name = c("discharge_spec_obs", "precipitation_mean"),
       start_date = input$selectPeriod[1],
@@ -77,6 +83,7 @@ function(input, output, session) {
       select(Lat, Long, gauge_id) %>% 
       left_join(streamflow_statistic, by = "gauge_id")
     
+    # Display hydrological indicators
     output$hydrologische_indikatoren <- DT::renderDataTable({
       df <- hydrologische_indikatoren %>% 
         mutate_if(is.numeric, round, digits = 3) %>%
@@ -92,6 +99,47 @@ function(input, output, session) {
       
       DT::datatable(df, options = list(ajax = list(url = action)), escape = FALSE)
     })
+    
+    # Display catchment attributes
+    output$catchment_attributes <- DT::renderDataTable({
+      df <- attributes %>%
+        filter(gauge_id %in% streamflow_statistic$gauge_id) %>%
+        mutate(Show = paste('<a class="go-map" href="" data-lat="', 
+                            Lat, '" data-long="', 
+                            Long, '" data-zip="', 
+                            gauge_id, '"><i class="fa fa-crosshairs"></i></a>', 
+                            sep="")) %>% 
+        select(last_col(), everything())
+      
+      action <- DT::dataTableAjax(session, df, outputId = "catchment_attributes")
+      
+      DT::datatable(df, options = list(ajax = list(url = action)), escape = FALSE)
+    })
+    
+    # Update map
+    leafletProxy("map") %>%
+      clearGroup("Alle Einzugsgebiete") %>%
+      addCircleMarkers(data = stations %>% 
+                         dplyr::filter(
+                           gauge_id %in% streamflow_statistic$gauge_id),
+                       radius = 3,
+                       group = "Alle Einzugsgebiete",
+                       fillColor = "#1A85FF",
+                       fillOpacity = 1,
+                       stroke = FALSE,
+                       layerId = ~ gauge_id
+      ) %>% 
+      addPolygons(
+        data = catchments %>% 
+          dplyr::filter(gauge_id %in% streamflow_statistic$gauge_id),
+        stroke = TRUE,
+        group = "Alle Einzugsgebiete",
+        fillColor = "#ffffff00",
+        color = "#1A85FF",
+        weight = 2,
+        layerId = ~ gauge_id) %>% 
+      clearControls()
+    
   })
   
   
@@ -112,42 +160,8 @@ function(input, output, session) {
       map %>% fitBounds(lng - dist, lat - dist, lng + dist, lat + dist)
     })
   })
-
-  output$catchment_attributes <- DT::renderDataTable({
-    df <- attributes %>%
-      filter(
-        dams_num <= input$nr_dam,
-        artificial_surfaces_perc <= input$urban_land,
-        agricultural_areas_perc <= input$agri_land
-      ) %>%
-      mutate(Show = paste('<a class="go-map" href="" data-lat="', 
-                            Lat, '" data-long="', 
-                            Long, '" data-zip="', 
-                            gauge_id, '"><i class="fa fa-crosshairs"></i></a>', 
-                            sep="")) %>% 
-      select(last_col(), everything())
-    
-    action <- DT::dataTableAjax(session, df, outputId = "catchment_attributes")
-
-    DT::datatable(df, options = list(ajax = list(url = action)), escape = FALSE)
-  })
   
-  #----------------------------------------------------------------------------#
-  #                 Show selected gauge on map                                 #
-  #----------------------------------------------------------------------------#
-  observeEvent(input$map_marker_click, {
-    
-    if (!is.null(input$map_marker_click$id)){
-      leafletProxy("map") %>%
-        clearGroup("click_catchment") %>%
-        addPolygons(
-          data = subset(catchments, gauge_id == input$map_marker_click$id),
-          stroke = TRUE,
-          weight = 2,
-          group = "click_catchment",
-          layerId = ~ gauge_id)
-    } 
-  })
+
   
   #----------------------------------------------------------------------------#
   #                 Display selected  when click gauge                #
@@ -159,38 +173,7 @@ function(input, output, session) {
                     artificial_surfaces_perc <= input$urban_land,
                     agricultural_areas_perc <= input$agri_land)
     
-    leafletProxy("map") %>%
-      clearGroup("Naturnahes Einzugsgebiet") %>%
-      addCircleMarkers(data = stations %>% 
-                         dplyr::filter(
-                           gauge_id %in% selected_catchments$gauge_id),
-                       radius = 3,
-                       group = "Naturnahes Einzugsgebiet",
-                       fillColor = "#1A85FF",
-                       fillOpacity = 1,
-                       stroke = FALSE,
-                       layerId = ~ gauge_id
-      ) %>% 
-      addCircleMarkers(data = stations %>% 
-                         dplyr::filter(
-                           !gauge_id %in% selected_catchments$gauge_id),
-                       radius = 3,
-                       group = "Unnatürliches Einzugsgebiet",
-                       fillColor = "#FFC107",
-                       fillOpacity = 1,
-                       stroke = FALSE,
-                       layerId = ~ gauge_id
-      ) %>%
-      addPolygons(
-        data = catchments %>% 
-          dplyr::filter(gauge_id %in% selected_catchments$gauge_id),
-        stroke = TRUE,
-        group = "Naturnahes Einzugsgebiet",
-        fillColor = "#ffffff00",
-        color = "#1A85FF",
-        weight = 2,
-        layerId = ~ gauge_id) %>% 
-      clearControls()
+    
   })
   
   #----------------------------------------------------------------------------#

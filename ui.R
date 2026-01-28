@@ -64,28 +64,12 @@ navbarPage(
   
   tabPanel(
     "Einzugsgebiet Charakteristik",
-    
-    # Elements for selecting near-natural catchments
-    fluidRow(
-      column(12,
-             numericInput("nr_dam", "1. Maximum number of dams", 
-                          min = 0, max = 999, value = 0),
-             
-             numericInput("agri_land", "2. Max fraction of agricultural land (%)", 
-                          min = 0, max = 100, value = 20),
-             
-             numericInput("urban_land", "3. Max fraction of urban land (%)", 
-                          min = 0, max = 100, value = 10),
-      )
-    ),
-    
     hr(),
     DT::dataTableOutput("catchment_attributes")
   ),
   
   tabPanel(
     "Hydrologische Indikatoren",
-    
     hr(),
     DT::dataTableOutput("hydrologische_indikatoren")
   )
