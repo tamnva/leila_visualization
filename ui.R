@@ -32,7 +32,7 @@ navbarPage(
             
             # First need to filter catchments with streamflow data
             bslib::nav_panel(
-              title = "Data →", selected = TRUE,
+              title = "1.Data", selected = TRUE,
               tags$hr(class = "custom-line"), h5(),
               
               dateRangeInput("selectPeriod", "1. Select period for analysis",
@@ -50,11 +50,27 @@ navbarPage(
             
             # Now select "targeted catchment"
             bslib::nav_panel(
-              title = "Targeted catchments", selected = TRUE,
+              title = "2.Targeted catchments", selected = TRUE,
+              tags$hr(class = "custom-line"), h5(),
+              
+              numericInput("stream_wquality", 
+                           "1. River length with good quality (%)",
+                           min = 0, max = 100, value = 50),
+              
+              numericInput("groundwater_quality", 
+                           "2. Aquifer area with good quality (%)",
+                           min = 0, max = 100, value = 50),
+              
+              h6("3. .....")
+              
+            ),
+            
+            # Regression to link hydrological indicator and catchment attributes
+            bslib::nav_panel(
+              title = "3.Regression", selected = TRUE,
               tags$hr(class = "custom-line"), h5(),
               
               h6("working")
-
             ),
             
           ), 
