@@ -8,6 +8,9 @@ navbarPage(
     
     conditionalPanel("false", icon("bullseye")),
     
+    shinybusy::add_busy_spinner(spin = "radar", position = c("bottom-right"),
+                                margins = c(100, 100)),
+    
     div(class="outer",
         tags$head(
           # Include our custom CSS
@@ -42,7 +45,7 @@ navbarPage(
                            min = 0, max = 99, value = 5),
               
               h5("3. Run subseting catchments"),
-              actionButton("dataSubset", "click to run")
+              actionButton("dataSubset", "Run and calculate streamflow statistics")
             ),
             
             # Now select "targeted catchment"

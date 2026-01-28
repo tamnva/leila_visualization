@@ -24,7 +24,7 @@ getStreamflowStatistics <- function(timeseries_camels_combine,
                                     end_date,
                                     max_missing) {
   
-  # Read streamflow and precipitation time series (mm/day) from camels-de
+  message("Reading streamflow data...")
   streamflow_precipitation <- data.table::fread(timeseries_camels_combine) %>%
     tibble::as_tibble()
   
@@ -35,7 +35,7 @@ getStreamflowStatistics <- function(timeseries_camels_combine,
     dplyr::select(all_of(c("date", "gauge_id", {{variable_name}})))
   
   
-  # Remove gauges with missing > max_missing
+  message("Removing stations with missing data more than certain %...")
   ndays <- as.numeric(end_date - start_date) + 1
   nyears <- ndays/365.24
   
@@ -48,7 +48,7 @@ getStreamflowStatistics <- function(timeseries_camels_combine,
   streamflow_precipitation <- streamflow_precipitation %>%
     dplyr::filter(!gauge_id %in% missing$gauge_id)
 
-  # Get mean and standard devation
+  message("Calculating daily streamflow statistics...")
   daily_Q_statistics <- streamflow_precipitation %>%
     dplyr::group_by(gauge_id) %>%
     dplyr::summarise(Q_mean = mean(discharge_spec_obs, na.rm = TRUE),
@@ -56,16 +56,18 @@ getStreamflowStatistics <- function(timeseries_camels_combine,
                      Q_5 = quantile(discharge_spec_obs, 0.05, na.rm= TRUE),
                      Q_95 = quantile(discharge_spec_obs, 0.95, na.rm= TRUE),
                      runoff_coefficient = sum(discharge_spec_obs, na.rm = TRUE)/
-                       sum(precipitation_mean, na.rm = TRUE))
+                       sum(precipitation_mean, na.rm = TRUE),
+                     .groups = "drop")
   
-  # Q7,10    
+  message("Calculating minimum 7day average flow in 10 years (Q7,10)...")   
   Q_7_10 <- streamflow_precipitation %>%
     dplyr::group_by(gauge_id) %>%
     dplyr::mutate(Q_7 = data.table::frollmean(discharge_spec_obs, 
                                                  n = 7, na.rm = FALSE),
                   year = lubridate::year(date)) %>%
     dplyr::group_by(gauge_id, year) %>%
-    dplyr::summarise(Q_7_10 = min(Q_7, na.rm = TRUE))
+    dplyr::summarise(Q_7_10 = min(Q_7, na.rm = TRUE),
+                     .groups = "drop")
   
   Q_7_10$Q_7_10[which(is.infinite(Q_7_10$Q_7_10))] <- NA
   
@@ -73,7 +75,7 @@ getStreamflowStatistics <- function(timeseries_camels_combine,
     group_by(gauge_id) %>% 
     dplyr::summarise(Q_7_10 = quantile(Q_7_10, 10/nyears, na.rm = TRUE))
   
-  # Seasonal amplitude
+  message("Calculating seasonal amplitude...")
   Q_seasonal_amplitude <- streamflow_precipitation %>%
     dplyr::mutate(month = lubridate::month(date),) %>%
     dplyr::group_by(gauge_id, month) %>%
@@ -81,12 +83,14 @@ getStreamflowStatistics <- function(timeseries_camels_combine,
                      .groups = "drop") %>%
     dplyr::group_by(gauge_id) %>%
     dplyr::summarise(Q_seasonal_amplitude = max(Q_monthly_mean, na.rm = TRUE) -
-                       min(Q_monthly_mean, na.rm = TRUE))
+                       min(Q_monthly_mean, na.rm = TRUE),
+                     .groups = "drop")
     
   streamflow_statistics <- daily_Q_statistics %>%
     dplyr::left_join(Q_7_10, by = "gauge_id")  %>%
     dplyr::left_join(Q_seasonal_amplitude, by = "gauge_id")
   
+  message("Done")
   return(streamflow_statistics)
 }
 

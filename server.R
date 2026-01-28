@@ -55,6 +55,46 @@ function(input, output, session) {
   
   })
   
+  
+  #----------------------------------------------------------------------------#
+  #    Select catchment based on streamflow data availability (Data)           #
+  #----------------------------------------------------------------------------#
+  observe({
+    req(input$selectPeriod)
+    req(input$maxQmissing)
+    req(input$dataSubset)
+    
+    # Read streamflow data from CAMELS-DE
+    streamflow_statistic <- getStreamflowStatistics(
+      timeseries_camels_combine ="data/CAMELS_DE_hydromet_timeseries_combine.csv",
+      variable_name = c("discharge_spec_obs", "precipitation_mean"),
+      start_date = input$selectPeriod[1],
+      end_date = input$selectPeriod[2],
+      max_missing = input$maxQmissing)
+    
+    hydrologische_indikatoren <<-  attributes %>% 
+      filter(gauge_id %in% streamflow_statistic$gauge_id) %>%
+      select(Lat, Long, gauge_id) %>% 
+      left_join(streamflow_statistic, by = "gauge_id")
+    
+    output$hydrologische_indikatoren <- DT::renderDataTable({
+      df <- hydrologische_indikatoren %>% 
+        mutate_if(is.numeric, round, digits = 3) %>%
+        mutate(Show = paste('<a class="go-map" href="" data-lat="', 
+                            Lat, '" data-long="', 
+                            Long, '" data-zip="', 
+                            gauge_id, '"><i class="fa fa-crosshairs"></i></a>', 
+                            sep="")) %>% 
+        select(last_col(), everything()) %>%
+        select(!c(Lat, Long))
+      
+      action <- DT::dataTableAjax(session, df, outputId = "hydrologische_indikatoren")
+      
+      DT::datatable(df, options = list(ajax = list(url = action)), escape = FALSE)
+    })
+  })
+  
+  
 
   #----------------------------------------------------------------------------#
   #                 Near-natural catchment selection                           #
@@ -92,22 +132,6 @@ function(input, output, session) {
     DT::datatable(df, options = list(ajax = list(url = action)), escape = FALSE)
   })
   
-  output$hydrologische_indikatoren <- DT::renderDataTable({
-    df <- hydrologische_indikatoren %>% 
-      mutate_if(is.numeric, round, digits = 3) %>%
-      mutate(Show = paste('<a class="go-map" href="" data-lat="', 
-                          Lat, '" data-long="', 
-                          Long, '" data-zip="', 
-                          gauge_id, '"><i class="fa fa-crosshairs"></i></a>', 
-                          sep="")) %>% 
-      select(last_col(), everything()) %>%
-      select(!c(Lat, Long))
-    
-    action <- DT::dataTableAjax(session, df, outputId = "hydrologische_indikatoren")
-    
-    DT::datatable(df, options = list(ajax = list(url = action)), escape = FALSE)
-  })
-  
   #----------------------------------------------------------------------------#
   #                 Show selected gauge on map                                 #
   #----------------------------------------------------------------------------#
@@ -123,8 +147,6 @@ function(input, output, session) {
           group = "click_catchment",
           layerId = ~ gauge_id)
     } 
-    
-    
   })
   
   #----------------------------------------------------------------------------#
