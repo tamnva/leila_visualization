@@ -51,13 +51,11 @@ function(input, output, session) {
   #----------------------------------------------------------------------------#
   #    Select catchment based on streamflow data availability (Data)           #
   #----------------------------------------------------------------------------#
-  observe({
-    
-    req(input$dataSubset)
-    
+  observeEvent(input$dataSubset, {
+
     # Read streamflow data from CAMELS-DE
     streamflow_statistic <<- getStreamflowStatistics(
-      timeseries_camels_combine ="data/CAMELS_DE_hydromet_timeseries_combine.csv",
+      timeseries_camels_combine = timeseries_camels_combine_file,
       variable_name = c("discharge_spec_obs", "precipitation_mean"),
       start_date = input$selectPeriod[1],
       end_date = input$selectPeriod[2],
@@ -80,9 +78,11 @@ function(input, output, session) {
         select(last_col(), everything()) %>%
         select(!c(Lat, Long))
       
-      action <- DT::dataTableAjax(session, df, outputId = "hydrologische_indikatoren")
+      action <- DT::dataTableAjax(session, df, 
+                                  outputId = "hydrologische_indikatoren")
       
-      DT::datatable(df, options = list(ajax = list(url = action)), escape = FALSE)
+      DT::datatable(df, options = list(ajax = list(url = action)), 
+                    escape = FALSE)
     })
     
     # Display catchment attributes
@@ -96,9 +96,11 @@ function(input, output, session) {
                             sep="")) %>% 
         select(last_col(), everything())
       
-      action <- DT::dataTableAjax(session, df, outputId = "catchment_attributes")
+      action <- DT::dataTableAjax(session, df, 
+                                  outputId = "catchment_attributes")
       
-      DT::datatable(df, options = list(ajax = list(url = action)), escape = FALSE)
+      DT::datatable(df, options = list(ajax = list(url = action)), 
+                    escape = FALSE)
     })
     
     # Update map
@@ -157,9 +159,5 @@ function(input, output, session) {
   #----------------------------------------------------------------------------#
   #                           Boxplot for selected catchment                   #
   #----------------------------------------------------------------------------#
-  observeEvent(
-    c(input$selectPeriod, input$maxQmissing), {
-      
-      
-  })
+
 }
