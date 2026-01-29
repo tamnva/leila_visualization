@@ -13,7 +13,7 @@ function(input, output, session) {
   })
   
   #----------------------------------------------------------------------------#
-  #                                Background map                              #
+  #               Background + default maps/tables                             #
   #----------------------------------------------------------------------------#
   output$map <- renderLeaflet({
     leaflet() %>%
@@ -31,8 +31,8 @@ function(input, output, session) {
       addCircleMarkers(data = stations,
                        radius = 3,
                        group = "Alle Einzugsgebiete",
-                       fillColor = "#1A85FF",
-                       fillOpacity = 1,
+                       fillColor = "#785EF0",
+                       fillOpacity = 0.8,
                        stroke = FALSE,
                        popup = ~ showPopup(gauge_id),
                        layerId = ~ gauge_id
@@ -44,9 +44,14 @@ function(input, output, session) {
                           "Hydrogeologie"),
         options = layersControlOptions(position = "bottomleft")
       )  %>%
+      hideGroup("Hydrogeologie") %>%
       setView(lng = 9, lat = 50, zoom = 5)
   })
   
+  
+  output$catchment_attributes <- DT::renderDataTable({
+    showDataFrame(attributes, session, NULL)
+  })
   
   #----------------------------------------------------------------------------#
   #    Select catchment based on streamflow data availability (Data)           #
@@ -63,7 +68,7 @@ function(input, output, session) {
     
     hydrologische_indikatoren <<-  attributes %>% 
       filter(gauge_id %in% streamflow_statistic$gauge_id) %>%
-      select(Lat, Long, gauge_id) %>% 
+      select(lat, long, gauge_id) %>% 
       left_join(streamflow_statistic, by = "gauge_id")
     
     # Display hydrological indicators
@@ -71,12 +76,12 @@ function(input, output, session) {
       df <- hydrologische_indikatoren %>% 
         mutate_if(is.numeric, round, digits = 3) %>%
         mutate(Show = paste('<a class="go-map" href="" data-lat="', 
-                            Lat, '" data-long="', 
-                            Long, '" data-zip="', 
+                            lat, '" data-long="', 
+                            long, '" data-zip="', 
                             gauge_id, '"><i class="fa fa-crosshairs"></i></a>', 
                             sep="")) %>% 
         select(last_col(), everything()) %>%
-        select(!c(Lat, Long))
+        select(!c(lat, long))
       
       action <- DT::dataTableAjax(session, df, 
                                   outputId = "hydrologische_indikatoren")
@@ -87,20 +92,7 @@ function(input, output, session) {
     
     # Display catchment attributes
     output$catchment_attributes <- DT::renderDataTable({
-      df <- attributes %>%
-        filter(gauge_id %in% streamflow_statistic$gauge_id) %>%
-        mutate(Show = paste('<a class="go-map" href="" data-lat="', 
-                            Lat, '" data-long="', 
-                            Long, '" data-zip="', 
-                            gauge_id, '"><i class="fa fa-crosshairs"></i></a>', 
-                            sep="")) %>% 
-        select(last_col(), everything())
-      
-      action <- DT::dataTableAjax(session, df, 
-                                  outputId = "catchment_attributes")
-      
-      DT::datatable(df, options = list(ajax = list(url = action)), 
-                    escape = FALSE)
+      showDataFrame(attributes, session, streamflow_statistic$gauge_id)
     })
     
     # Update map
@@ -111,8 +103,8 @@ function(input, output, session) {
                            gauge_id %in% streamflow_statistic$gauge_id),
                        radius = 3,
                        group = "Alle Einzugsgebiete",
-                       fillColor = "#1A85FF",
-                       fillOpacity = 1,
+                       fillColor = "#785EF0",
+                       fillOpacity = 0.8,
                        stroke = FALSE,
                        layerId = ~ gauge_id
       ) %>%

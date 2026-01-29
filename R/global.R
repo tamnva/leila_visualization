@@ -2,14 +2,19 @@ library(dplyr)
 library(readr)
 library(sf)
 library(terra)
+library(data.table)
+library(tibble)
+library(DT)
 
 # setwd("C:/Users/nguyenta/Documents/LEILA/working_code_documentation/code/leila_visualization")
 #------------------------------------------------------------------------------#
 #                         Read database                                        #
 #------------------------------------------------------------------------------#
+timeseries_camels_combine_file = "data/CAMELS_DE_hydromet_timeseries_combine.csv"
+
 # Read catchment attributes
-attributes <- read_csv("data/attributes.csv", show_col_types = FALSE) %>%
-  rename(Lat = gauge_lat, Long = gauge_lon)
+attributes <- read.csv("data/attributes.csv", header = TRUE, sep = ",") %>%
+  as_tibble() %>% rename(lat = gauge_lat, long = gauge_lon)
 
 # Read shape files of station and catchments
 stations <- st_transform(st_read("data/CAMELS_DE_gauging_stations.shp", 
