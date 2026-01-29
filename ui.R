@@ -35,17 +35,20 @@ navbarPage(
               title = "1.Data", selected = TRUE,
               tags$hr(class = "custom-line"), h5(),
               
-              dateRangeInput("selectPeriod", "1. Select period for analysis",
+              dateRangeInput("selectPeriod", 
+                             "1. Select period for analysis",
                              start = as.Date("2001-01-01"),
                              end = as.Date("2020-12-31"),
                              min = as.Date("1980-01-01"),
                              max = as.Date("2020-12-31")),
               
-              numericInput("maxQmissing", "2. Maximum allowable missing streamflow (%)",
+              numericInput("maxQmissing", 
+                           "2. Maximum allowable missing streamflow (%)",
                            min = 0, max = 99, value = 5),
               
               h5("3. Run subseting catchments"),
-              actionButton("dataSubset", "Run and calculate streamflow statistics")
+              actionButton("dataSubset", 
+                           "Run and calculate streamflow statistics")
             ),
             
             # Now select "targeted catchment"
@@ -54,14 +57,17 @@ navbarPage(
               tags$hr(class = "custom-line"), h5(),
               
               numericInput("stream_wquality", 
-                           "1. River length with good quality (%)",
+                           "1. River length with good water quality (%)",
                            min = 0, max = 100, value = 50),
               
               numericInput("groundwater_quality", 
-                           "2. Aquifer area with good quality (%)",
+                           "2. Aquifer area with good water quality (%)",
                            min = 0, max = 100, value = 50),
               
-              h6("3. .....")
+              h5("3. Add more criteria here..."),
+              
+              h5("4. Select targeted catchments"),
+              actionButton("selectTargetedCatchments", "Run")
               
             ),
             

@@ -1,8 +1,3 @@
-library(leaflet)
-library(dplyr)
-library(tidyr)
-library(ggplot2)
-library(spsComps)
 
 
 function(input, output, session) {
@@ -31,7 +26,7 @@ function(input, output, session) {
       addCircleMarkers(data = stations,
                        radius = 3,
                        group = "Alle Einzugsgebiete",
-                       fillColor = "#785EF0",
+                       fillColor = "#FFC107",
                        fillOpacity = 0.8,
                        stroke = FALSE,
                        popup = ~ showPopup(gauge_id),
@@ -67,21 +62,21 @@ function(input, output, session) {
       max_missing = input$maxQmissing)
     
     hydrologische_indikatoren <<-  attributes %>% 
-      filter(gauge_id %in% streamflow_statistic$gauge_id) %>%
-      select(lat, long, gauge_id) %>% 
-      left_join(streamflow_statistic, by = "gauge_id")
+      dplyr::filter(gauge_id %in% streamflow_statistic$gauge_id) %>%
+      dplyr::select(lat, long, gauge_id) %>% 
+      dplyr::left_join(streamflow_statistic, by = "gauge_id")
     
     # Display hydrological indicators
     output$hydrologische_indikatoren <- DT::renderDataTable({
       df <- hydrologische_indikatoren %>% 
-        mutate_if(is.numeric, round, digits = 3) %>%
-        mutate(Show = paste('<a class="go-map" href="" data-lat="', 
+        dplyr::mutate_if(is.numeric, round, digits = 3) %>%
+        dplyr::mutate(Show = paste('<a class="go-map" href="" data-lat="', 
                             lat, '" data-long="', 
                             long, '" data-zip="', 
                             gauge_id, '"><i class="fa fa-crosshairs"></i></a>', 
                             sep="")) %>% 
-        select(last_col(), everything()) %>%
-        select(!c(lat, long))
+        dplyr::select(last_col(), everything()) %>%
+        dplyr::select(!c(lat, long))
       
       action <- DT::dataTableAjax(session, df, 
                                   outputId = "hydrologische_indikatoren")
@@ -103,7 +98,7 @@ function(input, output, session) {
                            gauge_id %in% streamflow_statistic$gauge_id),
                        radius = 3,
                        group = "Alle Einzugsgebiete",
-                       fillColor = "#785EF0",
+                       fillColor = "#FFC107",
                        fillOpacity = 0.8,
                        stroke = FALSE,
                        layerId = ~ gauge_id
@@ -142,6 +137,7 @@ function(input, output, session) {
         addPolygons(
           data = subset(catchments, gauge_id == input$map_marker_click$id),
           stroke = TRUE,
+          fillColor = "#00000000",
           weight = 2,
           popup = ~ showPopup(gauge_id),
           group = "Gewägktes Einzugsgebiet",

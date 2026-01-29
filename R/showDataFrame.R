@@ -17,6 +17,8 @@ showDataFrame <- function(attributes, session, select_gauge_id=NULL){
   if (!is.null(select_gauge_id)) {
     dataFrame <- attributes %>% 
       filter(gauge_id %in% select_gauge_id)
+  } else {
+    dataFrame <- attributes
   }
   
   dataFrame <- dataFrame %>%

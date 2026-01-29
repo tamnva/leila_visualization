@@ -1,10 +1,14 @@
+library(leaflet)
 library(dplyr)
+library(tidyr)
 library(readr)
+library(data.table)
 library(sf)
 library(terra)
-library(data.table)
 library(tibble)
 library(DT)
+library(spsComps)
+
 
 # setwd("C:/Users/nguyenta/Documents/LEILA/working_code_documentation/code/leila_visualization")
 #------------------------------------------------------------------------------#
