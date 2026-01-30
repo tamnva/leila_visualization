@@ -36,10 +36,16 @@ function(input, output, session) {
         baseGroups = c("CartoDBPositron", "CartoDBPositronNolabel", 
                        "OpenStreetMap", "OpenTopoMap", "WorldImagery"),
         overlayGroups = c("Alle Einzugsgebiete",
-                          "Hydrogeologie"),
+                          "Hydrogeologie", 
+                          "Ökologischer Zustand der Fließgewässer",
+                          "Grundwasserqualität",
+                          "Grundwasser-Vulnerabilität"),
         options = layersControlOptions(position = "bottomleft")
       )  %>%
-      hideGroup("Hydrogeologie") %>%
+      hideGroup(c("Hydrogeologie", 
+                  "Ökologischer Zustand der Fließgewässer",
+                  "Grundwasserqualität",
+                  "Grundwasser-Vulnerabilität")) %>%
       setView(lng = 9, lat = 50, zoom = 5)
   })
   
@@ -90,7 +96,10 @@ function(input, output, session) {
       showDataFrame(attributes, session, streamflow_statistic$gauge_id)
     })
     
+    
     # Update map
+    #showGauge(stations, streamflow_statistic$gauge_id)
+      
     leafletProxy("map") %>%
       clearGroup("Alle Einzugsgebiete") %>%
       addCircleMarkers(data = stations %>% 
@@ -145,7 +154,18 @@ function(input, output, session) {
   })
   
   #----------------------------------------------------------------------------#
-  #                           Boxplot for selected catchment                   #
+  #    Select catchment based on streamflow data availability (Data)           #
   #----------------------------------------------------------------------------#
-
+  observeEvent(input$selectTargetedCatchments, {
+    if (exists(hydrologische_indikatoren)){
+      
+      
+    }
+  })
+  
+  
+  #----------------------------------------------------------------------------#
+  #    Select catchment based on streamflow data availability (Data)           #
+  #----------------------------------------------------------------------------#
+  
 }

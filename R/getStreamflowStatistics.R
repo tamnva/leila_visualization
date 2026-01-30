@@ -9,7 +9,7 @@
 #' @export
 
 #library(dplyr)
-#timeseries_camels_combine <- "C:/Users/nguyenta/Documents/LEILA/working_code_documentation/data/camels_de/timeseries/CAMELS_DE_hydromet_timeseries_combine.csv"
+#timeseries_camels_combine <- "C:/Users/nguyenta/Documents/LEILA/working_code_documentation/code/leila_visualization/data/CAMELS_DE_hydromet_timeseries_combine.csv"
 #variable_name <- c("discharge_spec_obs", "precipitation_mean")
 #start_date <- as.Date("2001-01-01")
 #end_date <- as.Date("2020-12-31")
@@ -30,11 +30,10 @@ getStreamflowStatistics <- function(timeseries_camels_combine,
   
   # Get selected period and variable name
   streamflow_precipitation <- streamflow_precipitation %>% 
+    dplyr::select(all_of(c("date", "gauge_id", {{variable_name}}))) %>% 
     dplyr::filter(date >= start_date, 
-                  date <= end_date) %>% 
-    dplyr::select(all_of(c("date", "gauge_id", {{variable_name}})))
-  
-  
+                  date <= end_date) 
+    
   message("Removing stations with missing data more than certain %...")
   ndays <- as.numeric(end_date - start_date) + 1
   nyears <- ndays/365.24
@@ -58,6 +57,23 @@ getStreamflowStatistics <- function(timeseries_camels_combine,
                      runoff_coefficient = sum(discharge_spec_obs, na.rm = TRUE)/
                        sum(precipitation_mean, na.rm = TRUE),
                      .groups = "drop")
+  
+  message("Calculatin CVQ by season...")
+  
+  CVQ <- streamflow_precipitation %>%
+    dplyr::mutate(month = lubridate::month(date),
+                  season = case_when(
+                    month %in% c(12, 1, 2) ~ "Winter",
+                    month %in% c(3, 4, 5)  ~ "Spring",
+                    month %in% c(6, 7, 8)  ~ "Summer",
+                    month %in% c(9, 10, 11) ~ "Autumn"
+                  )) %>%
+    dplyr::group_by(gauge_id, season) %>%
+    dplyr::summarise(
+      CVQ = sd(discharge_spec_obs, na.rm = TRUE)/mean(
+        discharge_spec_obs, na.rm = TRUE), .groups = "drop"
+    ) %>% 
+    pivot_wider(names_from =season, values_from = CVQ, names_prefix = "CVQ_")
   
   message("Calculating minimum 7day average flow in 10 years (Q7,10)...")   
   Q_7_10 <- streamflow_precipitation %>%
@@ -88,7 +104,8 @@ getStreamflowStatistics <- function(timeseries_camels_combine,
     
   streamflow_statistics <- daily_Q_statistics %>%
     dplyr::left_join(Q_7_10, by = "gauge_id")  %>%
-    dplyr::left_join(Q_seasonal_amplitude, by = "gauge_id")
+    dplyr::left_join(Q_seasonal_amplitude, by = "gauge_id") %>%
+    dplyr::left_join(CVQ, by = "gauge_id")
   
   message("Done")
   return(streamflow_statistics)

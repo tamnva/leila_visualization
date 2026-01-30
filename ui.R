@@ -56,17 +56,25 @@ navbarPage(
               title = "2.Targeted catchments", selected = TRUE,
               tags$hr(class = "custom-line"), h5(),
               
-              numericInput("stream_wquality", 
-                           "1. River length with good water quality (%)",
-                           min = 0, max = 100, value = 50),
+              selectInput("selectFlowRegime", "1. Select flow regime",
+                          multiple = TRUE, 
+                          choices = c("CVQ_Autumn > 1.1 (erratic)",
+                                      "CVQ_Winter > 1.1 (erratic)",
+                                      "CVQ_Spring > 1.1 (erratic)",
+                                      "CVQ_Summer > 1.1 (erratic)"),
+                          selected = "CVQ_Summer > 1.1 (erratic)"
+              ),
+              textInput("stream_wquality", 
+                           "2. River length with good water quality (%)",
+                           value = "No data available"),
               
-              numericInput("groundwater_quality", 
-                           "2. Aquifer area with good water quality (%)",
-                           min = 0, max = 100, value = 50),
+              textInput("groundwater_quality", 
+                           "3. Aquifer area with good water quality (%)",
+                           value = "No data available"),
               
-              h5("3. Add more criteria here..."),
+              h5("4. Add more criteria here..."),
               
-              h5("4. Select targeted catchments"),
+              h5("5. Select targeted catchments"),
               actionButton("selectTargetedCatchments", "Run")
               
             ),
