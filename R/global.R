@@ -29,11 +29,6 @@ stations <- sf::st_transform(st_read("data/CAMELS_DE_gauging_stations.shp",
 catchments <- sf::st_transform(st_read("data/CAMELS_DE_catchments.shp", 
                                        quiet = TRUE), 4326) 
 
-
-# Read default hydrological indicators, can be recalcuated from the interface
-hydrologische_indikatoren <- readr::read_csv("data/hydrological_indicators.csv", 
-                                             show_col_types = FALSE)
-
 hydrologische_indikatoren <- NULL
 
 #Read Hydrogeologische Einheiten (from huek250 map from BGR)

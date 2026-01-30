@@ -51,7 +51,7 @@ function(input, output, session) {
   
   
   output$catchment_attributes <- DT::renderDataTable({
-    showDataFrame(attributes, session, NULL)
+    showDataFrame(attributes, session, "catchment_attributes", NULL)
   })
   
   #----------------------------------------------------------------------------#
@@ -74,46 +74,18 @@ function(input, output, session) {
     
     # Display hydrological indicators
     output$hydrologische_indikatoren <- DT::renderDataTable({
-      df <- hydrologische_indikatoren %>% 
-        dplyr::mutate_if(is.numeric, round, digits = 3) %>%
-        dplyr::mutate(Show = paste('<a class="go-map" href="" data-lat="', 
-                            lat, '" data-long="', 
-                            long, '" data-zip="', 
-                            gauge_id, '"><i class="fa fa-crosshairs"></i></a>', 
-                            sep="")) %>% 
-        dplyr::select(last_col(), everything()) %>%
-        dplyr::select(!c(lat, long))
-      
-      action <- DT::dataTableAjax(session, df, 
-                                  outputId = "hydrologische_indikatoren")
-      
-      DT::datatable(df, options = list(ajax = list(url = action)), 
-                    escape = FALSE)
+      showDataFrame(attributes, session, "hydrologische_indikatoren", 
+                    streamflow_statistic$gauge_id)
     })
     
     # Display catchment attributes
     output$catchment_attributes <- DT::renderDataTable({
-      showDataFrame(attributes, session, streamflow_statistic$gauge_id)
-    })
-    
+      showDataFrame(attributes, session, "catchment_attributes", 
+                    streamflow_statistic$gauge_id)})
     
     # Update map
-    #showGauge(stations, streamflow_statistic$gauge_id)
-      
-    leafletProxy("map") %>%
-      clearGroup("Alle Einzugsgebiete") %>%
-      addCircleMarkers(data = stations %>% 
-                         dplyr::filter(
-                           gauge_id %in% streamflow_statistic$gauge_id),
-                       radius = 3,
-                       group = "Alle Einzugsgebiete",
-                       fillColor = "#FFC107",
-                       fillOpacity = 0.8,
-                       stroke = FALSE,
-                       layerId = ~ gauge_id
-      ) %>%
-      clearControls()
-    
+    showGauge(stations, streamflow_statistic$gauge_id)
+
   })
   
   
@@ -156,11 +128,36 @@ function(input, output, session) {
   #----------------------------------------------------------------------------#
   #    Select catchment based on streamflow data availability (Data)           #
   #----------------------------------------------------------------------------#
-  observeEvent(input$selectTargetedCatchments, {
-    if (exists(hydrologische_indikatoren)){
+  observeEvent(input$selectFlowRegime, {
+    if (!is.null(hydrologische_indikatoren)){
       
+      update_hydrologische_indikatoren <<- hydrologische_indikatoren
       
-    }
+      for (condition in input$selectFlowRegime){
+        colname <- strsplit(condition, " ")[[1]][1]
+        
+        update_hydrologische_indikatoren <<- update_hydrologische_indikatoren %>%
+          filter(!!sym(colname) > 1.1)
+        
+        message("colname = ", colname, " nstations = ", nrow(update_hydrologische_indikatoren))
+      }
+      
+      # Display catchment attributes
+      output$catchment_attributes <- DT::renderDataTable({
+        showDataFrame(attributes, session, "catchment_attributes", 
+                      update_hydrologische_indikatoren$gauge_id)
+      })
+      
+      # Display hydrological indicators
+      output$hydrologische_indikatoren <- DT::renderDataTable({
+        showDataFrame(update_hydrologische_indikatoren, session, 
+                      "hydrologische_indikatoren")
+      })
+      
+      # Update map
+      showGauge(stations, update_hydrologische_indikatoren$gauge_id)
+    } 
+    
   })
   
   

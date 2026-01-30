@@ -12,13 +12,14 @@
 #'
 #' @export
 #' 
-showDataFrame <- function(attributes, session, select_gauge_id=NULL){
+showDataFrame <- function(catchment_attributes, session, 
+                          outputId, select_gauge_id=NULL){
   
   if (!is.null(select_gauge_id)) {
-    dataFrame <- attributes %>% 
+    dataFrame <- catchment_attributes %>% 
       filter(gauge_id %in% select_gauge_id)
   } else {
-    dataFrame <- attributes
+    dataFrame <- catchment_attributes
   }
   
   dataFrame <- dataFrame %>%
@@ -30,7 +31,7 @@ showDataFrame <- function(attributes, session, select_gauge_id=NULL){
     dplyr::select(last_col(), everything())
   
   action <- DT::dataTableAjax(session, dataFrame, 
-                              outputId = "catchment_attributes")
+                              outputId = outputId)
   
   DT::datatable(dataFrame, options = list(ajax = list(url = action)), 
                 escape = FALSE)

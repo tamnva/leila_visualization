@@ -1,12 +1,13 @@
 
 
-showGauge <- function(stations, select_gauge_id){
+showGauge <- function(stations_shape, select_gauge_id){
+  
   # Update map
   leafletProxy("map") %>%
     clearGroup("Alle Einzugsgebiete") %>%
-    addCircleMarkers(data = stations %>% 
+    addCircleMarkers(data = stations_shape %>% 
                        dplyr::filter(
-                         gauge_id %in% streamflow_statistic$gauge_id),
+                         gauge_id %in% select_gauge_id),
                      radius = 3,
                      group = "Alle Einzugsgebiete",
                      fillColor = "#FFC107",
