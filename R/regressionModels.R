@@ -21,6 +21,11 @@ reg_models <- function(data,          # data for training and testing
   models$simulated <- list()
   models$rmse_train <- list()
   models$rmse_test <- list()
+  models$target_test <- list()
+  models$predict_test <- list()
+  models$target_train <- list()
+  models$predict_train <- list()
+  
   
   # Split data to training and testing
   index <- sample(c(1:nrow(data)))
@@ -61,18 +66,23 @@ reg_models <- function(data,          # data for training and testing
   #----------------------------------------------------------------------------#
   # Plot results
   for (var in dependent_var){
-    target_test <- data_test[[var]]
-    predict_test <- predict(models[[var]], data_test)
+    models$target_test[[var]] <- data_test[[var]]
+    models$predict_test[[var]] <- predict(models[[var]], data_test)
   
-    target_train <- data_train[[var]]
-    predict_train <- predict(models[[var]], data_train)
+    models$target_train[[var]] <- data_train[[var]]
+    models$predict_train[[var]] <- predict(models[[var]], data_train)
     
-
+    # Static plot
+    
+    
+    # Plotly
     models$plt[[var]] <- ggplotly(
       ggplot() + 
-        geom_point(aes(x =  target_test, y = predict_test), 
+        geom_point(aes(x =  models$target_test[[var]] , 
+                       y = models$predict_test[[var]]), 
                    color = "#1E88E5", alpha = 0.7, size = 1) +
-        geom_point(aes(x =  target_train, y = predict_train), 
+        geom_point(aes(x =  models$target_train[[var]], 
+                       y = models$predict_train[[var]]), 
                    color = "#D81B60", alpha = 0.7, size = 1) +
         scale_color_discrete(name = "Model performance") +
         labs(x = "Target", y = "Predicted", title = var) +
